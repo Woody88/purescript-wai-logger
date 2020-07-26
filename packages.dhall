@@ -123,6 +123,36 @@ let upstream =
 
 let overrides = {=}
 
-let additions = {=}
+let additions =
+    {   wai =
+            { dependencies =
+                [ "http-types"
+                , "node-buffer"
+                , "node-http"
+                , "node-net"
+                , "node-streams"
+                , "node-url"
+                ]
+            , repo =
+                "https://github.com/Woody88/purescript-wai.git"
+            , version =
+                "master"
+            }
+
+    ,   http-types =
+            { dependencies =
+                [ "console"
+                , "effect"
+                , "psci-support"
+                , "tuples"
+                , "unicode"
+                , "uri"
+                ]
+            , repo =
+                "https://github.com/Woody88/purescript-http-types.git"
+            , version =
+                "master"
+            }
+    }
 
 in  upstream // overrides // additions
