@@ -1,6 +1,6 @@
 # wai-logger
 
-Wai request logger middleware 
+Wai logging middleware 
 
 ## Installation
 
