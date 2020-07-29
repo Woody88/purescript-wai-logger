@@ -138,7 +138,6 @@ let additions =
             , version =
                 "master"
             }
-
     ,   http-types =
             { dependencies =
                 [ "console"

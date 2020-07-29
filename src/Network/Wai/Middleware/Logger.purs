@@ -11,29 +11,17 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Network.HTTP.Types (hContentLength)
-import Network.HTTP.Types as H
-import Network.Wai (class WaiRequest, Middleware, Response(..))
+import Network.Wai (Middleware, Response(..))
 import Network.Wai as Wai
+import Network.Wai.Middelware.Logger.Internal (formatLineToken)
+import Network.Wai.Middleware.Logger.Types (Token, Format, token)
 import Node.Encoding (Encoding(..))
 import Node.Stream (Writable)
 import Node.Stream as Stream
-import Record.Format as Record
-
-type FormatFunc = (forall req. WaiRequest req => req -> Response -> ApplicationTime -> Effect String)
-
-type Nanoseconds =  Number 
-type Seconds =  Number 
-
-type ApplicationTime = 
-  { -- | Time between request received and application finished processing it
-    process :: Number
-  , -- | Time between request received and response sent
-    full    :: Number
-  }
 
 -- | Accepts a format which is just a function that will use a specific format to log application
 -- | Writable is just a stream where the log will be pushed to. stdout from Node.Process is a commong one.
-loggerMiddleware :: FormatFunc -> Writable () -> Middleware 
+loggerMiddleware :: forall sym. Format sym -> Writable () -> Middleware 
 loggerMiddleware format stream app req res = do 
   tstart  <- liftEffect hrtime
   app req \resp -> do 
@@ -47,74 +35,88 @@ loggerMiddleware format stream app req res = do
 hrtimeDiffMs :: Tuple Seconds Nanoseconds -> Number
 hrtimeDiffMs (Tuple sec nano) = sec * 1000000000.00 + nano / 1000000.00
 
-combined :: FormatFunc 
-combined req res _ = do 
+type ApacheCombined = "{remoteHost} - {remoteUser} {date} \"{method} {url} {httpVersion}\" {status} {contentLength} \"{referer}\" \"{userAgent}\""
+
+apacheCombined :: Format ApacheCombined 
+apacheCombined req res time = do 
   remoteHost <- fromMaybe "-" <$> Wai.remoteHost req
   date       <- (JSDate.toUTCString) <$> JSDate.now
-  pure $ Record.format (SProxy :: _ "{remoteHost} - {remoteUser} {date} \"{method} {url} {httpVersion}\" {status} {contentLength} \"{referer}\" \"{userAgent}\"") 
-    { remoteHost
+  pure $ formatLineToken req res time (SProxy :: _ ApacheCombined)
+    { remoteHost: token \rq rs t -> remoteHost
+    , date: token \rq rs t -> date
     , remoteUser
-    , date
-    , method: method req 
-    , url: url req 
-    , httpVersion: httpVersion req 
-    , referer: referer req 
-    , userAgent: userAgent req 
-    , contentLength: contentLength res 
-    , status: status res 
+    , method
+    , url
+    , httpVersion
+    , referer 
+    , userAgent 
+    , contentLength
+    , status 
     }
-    
-dev :: FormatFunc 
+
+type Dev = "\x1b[0m{method} {url} \x1b[{color}m{status}\x1b[0m {responseTime} ms - {contentLength}\x1b[0m"
+
+dev :: Format Dev 
 dev req res time = do
-  pure $ Record.format (SProxy :: _ "\x1b[0m{method} {url} \x1b[{color}m{status}\x1b[0m {responseTime} ms - {contentLength}\x1b[0m") 
-    { method: method req 
-    , url: url req 
-    , responseTime: Number.toStringWith (Number.fixed 3) time.full 
-    , status: status res 
-    , color: color $ status res
-    , contentLength: contentLength res 
+  pure $ formatLineToken req res time (SProxy :: _ Dev) 
+    { responseTime
+    , color
+    , method
+    , url
+    , status
+    , contentLength
     }
   where 
-    color st
+    responseTime = token \rq rs t -> Number.toStringWith (Number.fixed 3) time.full 
+    color = token \rq rs t -> show $ toColor $ fromMaybe 0 $ status' res
+    toColor st
       | st >= 500 = 31 -- red
       | st >= 400 = 33 -- yellow 
       | st >= 300 = 36 -- cyan 
       | st >= 200 = 32 -- green 
-      | otherwise     = 0  -- no color 
+      | otherwise = 0  -- no color 
 
-remoteUser :: String
-remoteUser =  "" 
+remoteUser :: Token
+remoteUser =  token \_ _ _ -> ""
 
-method :: ∀ hdl. WaiRequest hdl ⇒ hdl → H.Method
-method = Wai.method 
+method :: Token
+method = token \req _ _ -> show $ Wai.method req 
 
-url :: ∀ hdl. WaiRequest hdl ⇒ hdl → String 
-url = Wai.url   
+url :: Token  
+url = token \req _ _ -> Wai.url req 
 
-httpVersion :: ∀ hdl. WaiRequest hdl ⇒ hdl → H.HttpVersion
-httpVersion = Wai.httpVersion
+httpVersion :: Token 
+httpVersion = token \req _ _ -> show $ Wai.httpVersion req
 
-referer :: ∀ hdl. WaiRequest hdl ⇒ hdl → String
-referer = fromMaybe ""  <<< Wai.referer  
+referer :: Token
+referer = token \req _ _ -> fromMaybe mempty $ Wai.referer req 
 
-userAgent :: ∀ hdl. WaiRequest hdl ⇒ hdl → String 
-userAgent = Wai.userAgent  
+userAgent :: Token
+userAgent = token \req _ _ -> Wai.userAgent req
 
-status :: Response -> Int
-status res = fromMaybe (-1) $ case res of 
+status :: Token
+status = token \_ res _ -> case status' res of 
+  Just code -> show code
+  _         -> mempty
+
+status' :: Response -> Maybe Int 
+status' = case _ of 
   ResponseString st _ _ -> Just st.code
   _                     -> Nothing
 
-contentLength :: Response -> String 
-contentLength res = fromMaybe "" case res of 
-  ResponseString _ hdrs _ -> Map.lookup hContentLength $ Map.fromFoldable hdrs
-  _                     -> Nothing
+contentLength :: Token
+contentLength = token \_ res _ -> case res of 
+  ResponseString _ hdrs _ -> fromMaybe mempty $ Map.lookup hContentLength $ Map.fromFoldable hdrs
+  _                       -> mempty 
 
 hrtime :: Effect (Tuple Seconds Nanoseconds)
 hrtime = hrtimeImpl Tuple 
 
 hrtime' :: Tuple Seconds Nanoseconds -> Effect (Tuple Seconds Nanoseconds)
 hrtime' (Tuple sec nano) = hrtimeImpl_ [sec, nano] Tuple
+
+type Nanoseconds =  Number 
+type Seconds =  Number 
 
 foreign import  hrtimeImpl  ::  (Seconds -> Nanoseconds -> (Tuple Seconds Nanoseconds)) -> Effect (Tuple Seconds Nanoseconds)
 foreign import  hrtimeImpl_ :: Array Number -> (Seconds -> Nanoseconds -> (Tuple Seconds Nanoseconds)) -> Effect (Tuple Seconds Nanoseconds)
