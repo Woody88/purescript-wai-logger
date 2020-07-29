@@ -14,22 +14,22 @@ import Network.HTTP.Types (hContentLength)
 import Network.Wai (Middleware, Response(..))
 import Network.Wai as Wai
 import Network.Wai.Middelware.Logger.Internal (formatLineToken)
-import Network.Wai.Middleware.Logger.Types (Token, Format, token)
+import Network.Wai.Middleware.Logger.Types (Token, Formatter, token)
 import Node.Encoding (Encoding(..))
 import Node.Stream (Writable)
 import Node.Stream as Stream
 
--- | Accepts a format which is just a function that will use a specific format to log application
+-- | Accepts a formatter which is just a function that will use a specific format to log application
 -- | Writable is just a stream where the log will be pushed to. stdout from Node.Process is a commong one.
-loggerMiddleware :: forall sym. Format sym -> Writable () -> Middleware 
-loggerMiddleware format stream app req res = do 
+loggerMiddleware :: forall sym. Formatter sym -> Writable () -> Middleware 
+loggerMiddleware formatter stream app req res = do 
   tstart  <- liftEffect hrtime
   app req \resp -> do 
     tprocess <- liftEffect $ hrtime' tstart
     _ <- res resp 
     tfull <- liftEffect $ hrtime' tstart
     let  responseTime = { process: hrtimeDiffMs tprocess, full: hrtimeDiffMs tfull }
-    line <- liftEffect $ format req resp responseTime
+    line <- liftEffect $ formatter req resp responseTime
     liftEffect $ void $ Stream.writeString stream UTF8 (line <> " \n") (pure unit) 
 
 hrtimeDiffMs :: Tuple Seconds Nanoseconds -> Number
@@ -37,7 +37,7 @@ hrtimeDiffMs (Tuple sec nano) = sec * 1000000000.00 + nano / 1000000.00
 
 type ApacheCombined = "{remoteHost} - {remoteUser} {date} \"{method} {url} {httpVersion}\" {status} {contentLength} \"{referer}\" \"{userAgent}\""
 
-apacheCombined :: Format ApacheCombined 
+apacheCombined :: Formatter ApacheCombined 
 apacheCombined req res time = do 
   remoteHost <- fromMaybe "-" <$> Wai.remoteHost req
   date       <- (JSDate.toUTCString) <$> JSDate.now
@@ -56,7 +56,7 @@ apacheCombined req res time = do
 
 type Dev = "\x1b[0m{method} {url} \x1b[{color}m{status}\x1b[0m {responseTime} ms - {contentLength}\x1b[0m"
 
-dev :: Format Dev 
+dev :: Formatter Dev 
 dev req res time = do
   pure $ formatLineToken req res time (SProxy :: _ Dev) 
     { responseTime

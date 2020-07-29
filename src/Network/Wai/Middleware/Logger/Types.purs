@@ -3,7 +3,7 @@ module Network.Wai.Middleware.Logger.Types where
 import Effect (Effect)
 import Network.Wai (class WaiRequest, Response)
 
-type Format (sym :: Symbol) = (forall req. WaiRequest req => req -> Response -> ApplicationTime -> Effect String)
+type Formatter (sym :: Symbol) = (forall req. WaiRequest req => req -> Response -> ApplicationTime -> Effect String)
 
 newtype Token = Token (forall req. WaiRequest req => req -> Response -> ApplicationTime -> String)
 
