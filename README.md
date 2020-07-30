@@ -64,14 +64,12 @@ user@user:~$ spago install wai-logger
 
 ### Hello World 
 ```purescript 
-module Main where
-
 import Prelude
 
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Class.Console as Console
-import Network.HTTP.Types (ok200)
+import Network.HTTP.Types (internalServerError500)
 import Network.HTTP.Types.Header (hContentType)
 import Network.Wai (Application, responseStr)
 import Network.Wai.Middleware.Logger (apacheCombined, loggerMiddleware)
@@ -83,9 +81,10 @@ main :: Effect Unit
 main = do 
     let beforeMainLoop = Console.log $ "Listening on port " <> show defaultSettings.port
     void $ runSettings defaultSettings { beforeMainLoop = beforeMainLoop }
-      (loggerMiddleware apacheCombined stdout app)
-
+         $ loggerMiddleware apacheCombined stdout 
+         $ app
+         
 app :: Application 
 app req f = do
-    f $ responseStr ok200 [(hContentType /\ "text/plain")] "Hello, World!"
+    f $ responseStr internalServerError500 [(hContentType /\ "text/plain")] internalServerError500.message
 ```
