@@ -3,7 +3,7 @@ module Network.Wai.Middelware.Logger.Internal where
 import Prelude
 
 import Data.Symbol (class IsSymbol, SProxy(..))
-import Network.Wai (class WaiRequest, Response)
+import Network.Wai (Request, Response)
 import Network.Wai.Middleware.Logger.Types (ApplicationTime, Token(..))
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
@@ -37,11 +37,10 @@ instance mapRecordCons ::
 mapRecord :: forall rl r r' a b. RowToList r rl => MapRecord rl r r' a b => (a -> b) -> Record r -> Record r'
 mapRecord fn r = mapRec (RLProxy :: _ rl) fn r 
 
-formatLineToken :: forall req format parsed rl r r' . 
+formatLineToken :: forall format parsed rl r r' . 
   RowToList r rl 
   => Parse format parsed
   => FormatParsed parsed r'
   => MapRecord rl r r' Token String
-  => WaiRequest req 
-  => req -> Response -> ApplicationTime -> SProxy format -> Record r -> String
+  => Request -> Response -> ApplicationTime -> SProxy format -> Record r -> String
 formatLineToken req res time sym r = Record.format sym $ mapRecord (\(Token func) -> func req res time) r

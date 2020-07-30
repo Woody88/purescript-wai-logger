@@ -124,7 +124,21 @@ let upstream =
 let overrides = {=}
 
 let additions =
-    {   wai =
+    { 
+        warp =
+            { dependencies =
+                [ "node-fs-aff"
+                , "node-net"
+                , "node-url"
+                , "wai"
+                ]
+            , repo =
+                "https://github.com/Woody88/purescript-warp.git"
+            , version =
+                "master"
+            }
+        
+    ,   wai =
             { dependencies =
                 [ "http-types"
                 , "node-buffer"
@@ -138,6 +152,7 @@ let additions =
             , version =
                 "master"
             }
+            
     ,   http-types =
             { dependencies =
                 [ "console"

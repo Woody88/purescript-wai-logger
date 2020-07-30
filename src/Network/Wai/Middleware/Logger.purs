@@ -5,6 +5,7 @@ import Prelude
 import Data.JSDate as JSDate
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Newtype (unwrap)
 import Data.Number.Format as Number
 import Data.Symbol (SProxy(..))
 import Data.Tuple (Tuple(..))
@@ -12,7 +13,6 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Network.HTTP.Types (hContentLength)
 import Network.Wai (Middleware, Response(..))
-import Network.Wai as Wai
 import Network.Wai.Middelware.Logger.Internal (formatLineToken)
 import Network.Wai.Middleware.Logger.Types (Token, Formatter, token)
 import Node.Encoding (Encoding(..))
@@ -39,11 +39,10 @@ type ApacheCombined = "{remoteHost} - {remoteUser} {date} \"{method} {url} {http
 
 apacheCombined :: Formatter ApacheCombined 
 apacheCombined req res time = do 
-  remoteHost <- fromMaybe "-" <$> Wai.remoteHost req
   date       <- (JSDate.toUTCString) <$> JSDate.now
   pure $ formatLineToken req res time (SProxy :: _ ApacheCombined)
-    { remoteHost: token \rq rs t -> remoteHost
-    , date: token \rq rs t -> date
+    { date: token \rq rs t -> date
+    , remoteHost
     , remoteUser
     , method
     , url
@@ -79,20 +78,23 @@ dev req res time = do
 remoteUser :: Token
 remoteUser =  token \_ _ _ -> ""
 
+remoteHost :: Token
+remoteHost = token \req _ _ -> fromMaybe "-" $ _.remoteHost $ unwrap req
+
 method :: Token
-method = token \req _ _ -> show $ Wai.method req 
+method = token \req _ _ -> show $ _.method $ unwrap req 
 
 url :: Token  
-url = token \req _ _ -> Wai.url req 
+url = token \req _ _ -> _.url $ unwrap req 
 
 httpVersion :: Token 
-httpVersion = token \req _ _ -> show $ Wai.httpVersion req
+httpVersion = token \req _ _ -> show $ _.httpVersion $ unwrap req
 
 referer :: Token
-referer = token \req _ _ -> fromMaybe mempty $ Wai.referer req 
+referer = token \req _ _ -> fromMaybe "-" $ _.referer $ unwrap req 
 
 userAgent :: Token
-userAgent = token \req _ _ -> Wai.userAgent req
+userAgent = token \req _ _ -> fromMaybe "-" $ _.userAgent $ unwrap req
 
 status :: Token
 status = token \_ res _ -> case status' res of 

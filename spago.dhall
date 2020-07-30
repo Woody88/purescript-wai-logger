@@ -10,6 +10,8 @@ You can edit this file as you like.
   , "numbers"
   , "psci-support"
   , "record-format"
+  , "wai"
+  , "warp"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]

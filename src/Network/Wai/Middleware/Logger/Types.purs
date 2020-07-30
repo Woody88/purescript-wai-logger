@@ -1,11 +1,11 @@
 module Network.Wai.Middleware.Logger.Types where
 
 import Effect (Effect)
-import Network.Wai (class WaiRequest, Response)
+import Network.Wai (Request, Response)
 
-type Formatter (sym :: Symbol) = (forall req. WaiRequest req => req -> Response -> ApplicationTime -> Effect String)
+type Formatter (sym :: Symbol) = (Request -> Response -> ApplicationTime -> Effect String)
 
-newtype Token = Token (forall req. WaiRequest req => req -> Response -> ApplicationTime -> String)
+newtype Token = Token (Request -> Response -> ApplicationTime -> String)
 
 type ApplicationTime = 
   { -- | Time between request received and application finished processing it
@@ -14,5 +14,5 @@ type ApplicationTime =
     full    :: Number
   }
 
-token :: (forall req. WaiRequest req => req -> Response -> ApplicationTime -> String) -> Token 
+token :: (Request -> Response -> ApplicationTime -> String) -> Token 
 token = Token 
