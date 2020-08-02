@@ -9,23 +9,7 @@ You can install this package by adding it to your packages.dhall:
 
 ```dhall
 let additions =
-    { 
-        warp =
-            { dependencies =
-                [ "console"
-                , "effect"
-                , "numbers"
-                , "psci-support"
-                , "record-format"
-                , "wai"
-                ]
-            , repo =
-                "https://github.com/Woody88/purescript-wai-logger.git"
-            , version =
-                "master"
-            }
-        
-    ,   wai =
+    {   wai =
             { dependencies =
                 [ "http-types"
                 , "node-buffer"
@@ -39,7 +23,20 @@ let additions =
             , version =
                 "master"
             }
-            
+    ,   wai-logger =
+            { dependencies =
+                [ "console"
+                , "effect"
+                , "node-process"
+                , "numbers"
+                , "record-format"
+                , "wai"
+                ]
+            , repo =
+                "https://github.com/Woody88/purescript-wai.git"
+            , version =
+                "master"
+            }         
     ,   http-types =
             { dependencies =
                 [ "console"
@@ -62,7 +59,7 @@ user@user:~$ spago install wai-logger
 
 ## Usage 
 
-### Hello World 
+### Hello World (Using Warp)
 ```purescript 
 import Prelude
 
