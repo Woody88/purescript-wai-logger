@@ -33,7 +33,7 @@ let additions =
                 , "wai"
                 ]
             , repo =
-                "https://github.com/Woody88/purescript-wai.git"
+                "https://github.com/Woody88/purescript-wai-logger.git"
             , version =
                 "master"
             }         
