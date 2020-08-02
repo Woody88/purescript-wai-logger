@@ -66,7 +66,7 @@ import Prelude
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Class.Console as Console
-import Network.HTTP.Types (internalServerError500)
+import Network.HTTP.Types (ok200)
 import Network.HTTP.Types.Header (hContentType)
 import Network.Wai (Application, responseStr)
 import Network.Wai.Middleware.Logger (apacheCombined, loggerMiddleware)
@@ -83,5 +83,5 @@ main = do
          
 app :: Application 
 app req f = do
-    f $ responseStr internalServerError500 [(hContentType /\ "text/plain")] internalServerError500.message
+    f $ responseStr ok200 [(hContentType /\ "text/plain")] "Hello, World!"
 ```
