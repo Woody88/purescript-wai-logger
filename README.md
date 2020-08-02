@@ -1,6 +1,6 @@
 # wai-logger
 
-Wai logging middleware. Currently only provides Apache combined & Dev log ouput.
+Wai logging middleware. Currently only provides Apache combined & Dev log ouput out of the box.
 
 ## Installation
 
