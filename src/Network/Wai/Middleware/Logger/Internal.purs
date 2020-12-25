@@ -14,7 +14,7 @@ import Record.Format as Record
 import Type.Data.RowList (RLProxy(..))
 
 -- Credits to @justinwoo followed this blog: https://qiita.com/kimagure/items/06d7eed9521b6217b771
-class MapRecord (xs :: RowList) (row :: # Type) (row' :: # Type) a b | xs -> row row' a b where
+class MapRecord (xs :: RowList Type) (row :: Row Type) (row' :: Row Type) a b | xs -> row row' a b where
   mapRec :: RLProxy xs -> (a -> b) -> Record row -> Record row'
 
 instance mapRecordNil :: MapRecord RL.Nil row () a b where 
