@@ -12,7 +12,8 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Network.HTTP.Types (hContentLength)
-import Network.Wai (Middleware, Response(..))
+import Network.Wai (Middleware,Response(..))
+import Network.Wai.Internal (ResponseReceived(..))
 import Network.Wai.Middelware.Logger.Internal (formatLineToken)
 import Network.Wai.Middleware.Logger.Types (Token, Formatter, token)
 import Node.Encoding (Encoding(..))
@@ -31,6 +32,7 @@ loggerMiddleware formatter stream app req res = do
     let  responseTime = { process: hrtimeDiffMs tprocess, full: hrtimeDiffMs tfull }
     line <- liftEffect $ formatter req resp responseTime
     liftEffect $ void $ Stream.writeString stream UTF8 (line <> " \n") (pure unit) 
+    pure ResponseReceived
 
 hrtimeDiffMs :: Tuple Seconds Nanoseconds -> Number
 hrtimeDiffMs (Tuple sec nano) = sec * 1000000000.00 + nano / 1000000.00

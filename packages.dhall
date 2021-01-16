@@ -136,12 +136,7 @@ let overrides =
 let additions =
     { 
         warp =
-            { dependencies =
-                [ "node-fs-aff"
-                , "node-net"
-                , "node-url"
-                , "wai"
-                ]
+            { dependencies = [ "console", "effect", "generics-rep", "node-fs-aff", "node-http", "wai" ]
             , repo =
                 "https://github.com/Woody88/purescript-warp.git"
             , version =
@@ -149,14 +144,7 @@ let additions =
             }
         
     ,   wai =
-            { dependencies =
-                [ "http-types"
-                , "node-buffer"
-                , "node-http"
-                , "node-net"
-                , "node-streams"
-                , "node-url"
-                ]
+            { dependencies = [ "aff", "effect", "http-types", "node-net" ]
             , repo =
                 "https://github.com/Woody88/purescript-wai.git"
             , version =
@@ -164,14 +152,7 @@ let additions =
             }
             
     ,   http-types =
-            { dependencies =
-                [ "console"
-                , "effect"
-                , "psci-support"
-                , "tuples"
-                , "unicode"
-                , "uri"
-                ]
+            { dependencies = [ "tuples", "unicode", "generics-rep" ]
             , repo =
                 "https://github.com/Woody88/purescript-http-types.git"
             , version =
